@@ -159,6 +159,10 @@ class Access_Restriction_Manager {
 			foreach ( (array) $items as $item ) {
 				$slug = (string) ( $item['slug'] ?? '' );
 
+				if ( $this->is_canonical_post_type_screen( (string) $parent, $slug ) ) {
+					continue;
+				}
+
 				if ( '' === $slug || false !== strpos( strtolower( $slug ), 'adminforge' ) ) {
 					continue;
 				}
@@ -185,6 +189,10 @@ class Access_Restriction_Manager {
 	protected function maybe_add_guard( array $item, array $selected, $show_only ) {
 		$slug = (string) $item['slug'];
 		if ( false !== strpos( strtolower( $slug ), 'adminforge' ) ) {
+			return;
+		}
+
+		if ( ! empty( $item['parent'] ) && $this->is_canonical_post_type_screen( (string) $item['parent'], $slug ) ) {
 			return;
 		}
 
@@ -304,6 +312,10 @@ class Access_Restriction_Manager {
 					continue;
 				}
 
+				if ( $this->is_canonical_post_type_screen( (string) $parent, (string) $item['slug'] ) ) {
+					continue;
+				}
+
 				if ( $this->matches_item( array_merge( $item, array( 'parent' => $parent ) ), $page, $screen_id, $screen_base ) ) {
 					$selected_match = $this->is_linked_submenu( (string) $parent, (string) $item['slug'] )
 						? $this->settings->menu_item_is_selected( (string) $parent, $top_selected )
@@ -354,6 +366,20 @@ class Access_Restriction_Manager {
 	 */
 	protected function is_linked_submenu( $parent, $slug ) {
 		return (string) $parent === (string) $slug;
+	}
+
+	/**
+	 * Determine whether a slug is the canonical first screen for a post type menu.
+	 *
+	 * @param string $parent Parent slug.
+	 * @param string $slug Submenu slug.
+	 * @return bool
+	 */
+	protected function is_canonical_post_type_screen( $parent, $slug ) {
+		$parent = (string) $parent;
+		$slug   = (string) $slug;
+
+		return $parent === $slug && false !== strpos( $slug, 'edit.php?post_type=' );
 	}
 
 	/**

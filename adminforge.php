@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AdminForge
  * Description: Transform, simplify, and white-label the WordPress admin experience.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Abe Prangishvili
  * Text Domain: adminforge
  * Domain Path: /languages
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ADMINFORGE_VERSION', '1.0.2' );
+define( 'ADMINFORGE_VERSION', '1.0.3' );
 define( 'ADMINFORGE_FILE', __FILE__ );
 define( 'ADMINFORGE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ADMINFORGE_URL', plugin_dir_url( __FILE__ ) );
