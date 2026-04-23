@@ -112,7 +112,7 @@ class Admin_Page {
 		check_ajax_referer( 'adminforge_ajax', 'nonce' );
 
 		$term  = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
-		$users = $this->settings->search_users( $term, 20 );
+		$users = $this->settings->search_users( $term, 50 );
 
 		wp_send_json_success( array( 'results' => $users ) );
 	}
@@ -182,6 +182,27 @@ class Admin_Page {
 								<label><input type="checkbox" name="adminforge[general][bypass_for_admins]" value="1" <?php checked( (int) $settings['general']['bypass_for_admins'], 1 ); ?> /> <?php echo esc_html__( 'Let administrators bypass restrictions', 'adminforge' ); ?></label>
 							</div>
 						</div>
+						<div class="adminforge-user-selector adminforge-general-users" id="adminforge-general-user-selector" data-selected="<?php echo esc_attr( implode( ',', array_map( 'absint', $selected_users ) ) ); ?>">
+							<h3><?php echo esc_html__( 'Registered Users', 'adminforge' ); ?></h3>
+							<p class="description"><?php echo esc_html__( 'Select one or more registered users here. These users will receive the transformed experience even if role rules differ.', 'adminforge' ); ?></p>
+							<p>
+								<label for="adminforge-user-search"><?php echo esc_html__( 'Search registered users', 'adminforge' ); ?></label><br />
+								<input type="text" class="regular-text" id="adminforge-user-search" placeholder="<?php echo esc_attr__( 'Type a name, login, or email', 'adminforge' ); ?>" />
+							</p>
+							<div class="adminforge-user-results" id="adminforge-user-results"></div>
+							<div class="adminforge-user-selected" id="adminforge-user-selected">
+								<?php foreach ( $selected_users as $user_id ) : ?>
+									<?php $user = get_userdata( $user_id ); ?>
+									<?php if ( $user ) : ?>
+										<span class="adminforge-chip" data-user-id="<?php echo esc_attr( $user_id ); ?>">
+											<?php echo esc_html( $user->display_name ); ?>
+											<button type="button" class="adminforge-chip-remove" aria-label="<?php echo esc_attr__( 'Remove user', 'adminforge' ); ?>">&times;</button>
+											<input type="hidden" name="adminforge[general][target_users][]" value="<?php echo esc_attr( $user_id ); ?>" />
+										</span>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</div>
+						</div>
 					</section>
 
 					<section id="tab-menu" class="adminforge-panel">
@@ -242,23 +263,7 @@ class Admin_Page {
 
 					<section id="tab-users" class="adminforge-panel">
 						<h2><?php echo esc_html__( 'User Rules', 'adminforge' ); ?></h2>
-						<p><?php echo esc_html__( 'Select individual users. User-specific targeting overrides role targeting.', 'adminforge' ); ?></p>
-						<div id="adminforge-user-selector" class="adminforge-user-selector" data-selected="<?php echo esc_attr( implode( ',', array_map( 'absint', $selected_users ) ) ); ?>">
-							<input type="text" class="regular-text" id="adminforge-user-search" placeholder="<?php echo esc_attr__( 'Search users by name, login, or email', 'adminforge' ); ?>" />
-							<div class="adminforge-user-results" id="adminforge-user-results"></div>
-							<div class="adminforge-user-selected" id="adminforge-user-selected">
-								<?php foreach ( $selected_users as $user_id ) : ?>
-									<?php $user = get_userdata( $user_id ); ?>
-									<?php if ( $user ) : ?>
-										<span class="adminforge-chip" data-user-id="<?php echo esc_attr( $user_id ); ?>">
-											<?php echo esc_html( $user->display_name ); ?>
-											<button type="button" class="adminforge-chip-remove" aria-label="<?php echo esc_attr__( 'Remove user', 'adminforge' ); ?>">&times;</button>
-											<input type="hidden" name="adminforge[general][target_users][]" value="<?php echo esc_attr( $user_id ); ?>" />
-										</span>
-									<?php endif; ?>
-								<?php endforeach; ?>
-							</div>
-						</div>
+						<p><?php echo esc_html__( 'User-specific rules still work as a targeting layer, but user selection now lives in General Scope for easier management.', 'adminforge' ); ?></p>
 					</section>
 
 					<section id="tab-global" class="adminforge-panel">

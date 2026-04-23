@@ -50,6 +50,44 @@ jQuery(function ($) {
 		$(this).siblings('.adminforge-color-swatch').css('background', $(this).val());
 	});
 
+	function refreshUserResults(term) {
+		var $results = $('#adminforge-user-results');
+		$results.html('<p>Loading users...</p>');
+
+		$.get(AdminForgeData.ajaxUrl, {
+			action: 'adminforge_search_users',
+			nonce: AdminForgeData.nonce,
+			term: term || ''
+		}).done(function (response) {
+			if (!response || !response.success) {
+				$results.html('<p>Could not load users.</p>');
+				return;
+			}
+
+			var rows = response.data.results || [];
+			var html = '';
+
+			if (!rows.length) {
+				html = '<p>No users found.</p>';
+				$results.html(html);
+				return;
+			}
+
+			rows.forEach(function (row) {
+				html += '<div class="adminforge-user-result">';
+				html += '<span>' + $('<div/>').text(row.label).html() + '</span>';
+				html += '<button type="button" class="button button-small adminforge-user-add" data-user-id="' + row.id + '" data-user-label="' + $('<div/>').text(row.label).html() + '">Add</button>';
+				html += '</div>';
+			});
+
+			$results.html(html);
+		}).fail(function () {
+			$results.html('<p>Could not load users.</p>');
+		});
+	}
+
+	refreshUserResults('');
+
 	function addSelectedUser(user) {
 		var $selected = $('#adminforge-user-selected');
 		if ($selected.find('[data-user-id="' + user.id + '"]').length) {
@@ -67,33 +105,7 @@ jQuery(function ($) {
 
 	$('#adminforge-user-search').on('input', function () {
 		var term = $(this).val();
-		var $results = $('#adminforge-user-results');
-
-		if (term.length < 2) {
-			$results.empty();
-			return;
-		}
-
-		$.get(AdminForgeData.ajaxUrl, {
-			action: 'adminforge_search_users',
-			nonce: AdminForgeData.nonce,
-			term: term
-		}).done(function (response) {
-			if (!response || !response.success) {
-				return;
-			}
-
-			var rows = response.data.results || [];
-			var html = '';
-			rows.forEach(function (row) {
-				html += '<div class="adminforge-user-result">';
-				html += '<span>' + $('<div/>').text(row.label).html() + '</span>';
-				html += '<button type="button" class="button button-small adminforge-user-add" data-user-id="' + row.id + '" data-user-label="' + $('<div/>').text(row.label).html() + '">Add</button>';
-				html += '</div>';
-			});
-
-			$results.html(html);
-		});
+		refreshUserResults(term);
 	});
 
 	$(document).on('click', '.adminforge-user-add', function () {

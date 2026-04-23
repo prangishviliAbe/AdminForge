@@ -331,7 +331,7 @@ class Settings {
 	 * @param int    $limit Limit.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function search_users( $term = '', $limit = 20 ) {
+	public function search_users( $term = '', $limit = 50 ) {
 		$args = array(
 			'number'  => $limit,
 			'orderby' => 'display_name',

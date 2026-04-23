@@ -43,7 +43,7 @@ It is designed for:
 - Plugin Slug: adminforge
 - Text Domain: adminforge
 - Author: Abe Prangishvili
-- Version: 1.0.4
+- Version: 1.0.5
 
 ## Folder Structure
 
