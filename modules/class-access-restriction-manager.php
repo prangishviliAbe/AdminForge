@@ -75,6 +75,105 @@ class Access_Restriction_Manager {
 	}
 
 	/**
+	 * Remove hidden menu and submenu items from the admin UI.
+	 */
+	public function apply_menu_visibility() {
+		if ( ! $this->rules->should_apply() ) {
+			return;
+		}
+
+		$settings = $this->settings->get_settings();
+		$mode     = $settings['visibility']['menu_mode'];
+
+		$top_selected = array_map( 'sanitize_text_field', (array) $settings['visibility']['menu_items'] );
+		$sub_selected = array_map( 'sanitize_text_field', (array) $settings['visibility']['submenu_items'] );
+
+		global $menu, $submenu;
+
+		$runtime_top = array();
+		$runtime_sub = array();
+
+		if ( is_array( $menu ) ) {
+			foreach ( $menu as $item ) {
+				if ( empty( $item[2] ) ) {
+					continue;
+				}
+
+				$runtime_top[] = array(
+					'slug' => (string) $item[2],
+				);
+			}
+		}
+
+		if ( is_array( $submenu ) ) {
+			foreach ( $submenu as $parent => $items ) {
+				foreach ( (array) $items as $item ) {
+					if ( empty( $item[2] ) ) {
+						continue;
+					}
+
+					$runtime_sub[ (string) $parent ][] = array(
+						'slug' => (string) $item[2],
+					);
+				}
+			}
+		}
+
+		$this->remove_menu_items( $runtime_top, $top_selected, 'show_only' === $mode );
+		$this->remove_submenu_items( $runtime_sub, $sub_selected, 'show_only' === $mode );
+	}
+
+	/**
+	 * Remove top-level menu items.
+	 *
+	 * @param array<int, array<string, mixed>> $items Items.
+	 * @param array<int, string> $selected Selected slugs.
+	 * @param bool $show_only Whether selected items are the only visible ones.
+	 */
+	protected function remove_menu_items( array $items, array $selected, $show_only ) {
+		foreach ( $items as $item ) {
+			$slug = (string) ( $item['slug'] ?? '' );
+
+			if ( '' === $slug || false !== strpos( strtolower( $slug ), 'adminforge' ) ) {
+				continue;
+			}
+
+			$selected_match = $this->settings->menu_item_is_selected( $slug, $selected );
+			$should_remove  = $show_only ? ! $selected_match : $selected_match;
+
+			if ( $should_remove ) {
+				remove_menu_page( $slug );
+			}
+		}
+	}
+
+	/**
+	 * Remove submenu items.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $groups Groups.
+	 * @param array<int, string> $selected Selected keys.
+	 * @param bool $show_only Whether selected items are the only visible ones.
+	 */
+	protected function remove_submenu_items( array $groups, array $selected, $show_only ) {
+		foreach ( $groups as $parent => $items ) {
+			foreach ( (array) $items as $item ) {
+				$slug = (string) ( $item['slug'] ?? '' );
+
+				if ( '' === $slug || false !== strpos( strtolower( $slug ), 'adminforge' ) ) {
+					continue;
+				}
+
+				$selected_match = $this->settings->submenu_item_is_selected( (string) $parent, $slug, $selected );
+				$should_remove  = $show_only ? ! $selected_match : $selected_match;
+
+				if ( $should_remove ) {
+					remove_submenu_page( (string) $parent, $slug );
+				}
+			}
+		}
+	}
+
+	/**
 	 * Add a guard for one item.
 	 *
 	 * @param array<string, mixed> $item Item.
@@ -87,8 +186,10 @@ class Access_Restriction_Manager {
 			return;
 		}
 
-		$key  = ! empty( $item['parent'] ) ? $item['parent'] . '::' . $slug : $slug;
-		$hide = $show_only ? ! in_array( $key, $selected, true ) : in_array( $key, $selected, true );
+		$selected_match = ! empty( $item['parent'] )
+			? $this->settings->submenu_item_is_selected( (string) $item['parent'], $slug, $selected )
+			: $this->settings->menu_item_is_selected( $slug, $selected );
+		$hide = $show_only ? ! $selected_match : $selected_match;
 
 		if ( ! $hide ) {
 			return;
@@ -188,7 +289,8 @@ class Access_Restriction_Manager {
 
 			if ( $this->matches_item( $item, $page, $screen_id, $screen_base ) ) {
 				$key = (string) $item['slug'];
-				return 'show_only' === $mode ? ! in_array( $key, $top_selected, true ) : in_array( $key, $top_selected, true );
+				$selected_match = $this->settings->menu_item_is_selected( $key, $top_selected );
+				return 'show_only' === $mode ? ! $selected_match : $selected_match;
 			}
 		}
 
@@ -198,9 +300,9 @@ class Access_Restriction_Manager {
 					continue;
 				}
 
-				$composite_key = (string) $parent . '::' . (string) $item['slug'];
 				if ( $this->matches_item( array_merge( $item, array( 'parent' => $parent ) ), $page, $screen_id, $screen_base ) ) {
-					return 'show_only' === $mode ? ! in_array( $composite_key, $sub_selected, true ) : in_array( $composite_key, $sub_selected, true );
+					$selected_match = $this->settings->submenu_item_is_selected( (string) $parent, (string) $item['slug'], $sub_selected );
+					return 'show_only' === $mode ? ! $selected_match : $selected_match;
 				}
 			}
 		}

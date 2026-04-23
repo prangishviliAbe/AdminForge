@@ -129,9 +129,9 @@ class Settings {
 		$clean['general']['bypass_for_admins']  = empty( $input['general']['bypass_for_admins'] ) ? 0 : 1;
 
 		$clean['visibility']['menu_mode']              = isset( $input['visibility']['menu_mode'] ) ? $this->sanitize_allowed( $input['visibility']['menu_mode'], array( 'hide_selected', 'show_only' ), 'hide_selected' ) : 'hide_selected';
-		$clean['visibility']['menu_items']             = $this->sanitize_key_array( $input['visibility']['menu_items'] ?? array() );
-		$clean['visibility']['submenu_items']          = $this->sanitize_key_array( $input['visibility']['submenu_items'] ?? array() );
-		$clean['visibility']['dashboard_widgets']      = $this->sanitize_key_array( $input['visibility']['dashboard_widgets'] ?? array() );
+		$clean['visibility']['menu_items']             = $this->sanitize_text_array( $input['visibility']['menu_items'] ?? array() );
+		$clean['visibility']['submenu_items']          = $this->sanitize_text_array( $input['visibility']['submenu_items'] ?? array() );
+		$clean['visibility']['dashboard_widgets']      = $this->sanitize_text_array( $input['visibility']['dashboard_widgets'] ?? array() );
 		$clean['visibility']['restrict_direct_access'] = empty( $input['visibility']['restrict_direct_access'] ) ? 0 : 1;
 		$clean['visibility']['access_action']          = isset( $input['visibility']['access_action'] ) ? $this->sanitize_allowed( $input['visibility']['access_action'], array( 'redirect', 'deny' ), 'redirect' ) : 'redirect';
 		$clean['visibility']['redirect_target']        = isset( $input['visibility']['redirect_target'] ) ? sanitize_text_field( $input['visibility']['redirect_target'] ) : 'index.php';
@@ -259,6 +259,47 @@ class Settings {
 		$values = is_array( $values ) ? $values : explode( ',', (string) $values );
 		$values = array_map( 'sanitize_key', array_filter( array_map( 'trim', $values ) ) );
 		return array_values( array_unique( $values ) );
+	}
+
+	/**
+	 * Sanitize array of text values while preserving menu slugs and composite keys.
+	 *
+	 * @param mixed $values Values.
+	 * @return array<int, string>
+	 */
+	protected function sanitize_text_array( $values ) {
+		$values = is_array( $values ) ? $values : explode( ',', (string) $values );
+		$values = array_map( 'sanitize_text_field', array_filter( array_map( 'trim', $values ) ) );
+		return array_values( array_unique( $values ) );
+	}
+
+	/**
+	 * Determine whether a top-level menu slug is selected, supporting legacy sanitized values.
+	 *
+	 * @param string $slug Menu slug.
+	 * @param array<int, string> $selected Selected items.
+	 * @return bool
+	 */
+	public function menu_item_is_selected( $slug, array $selected ) {
+		$slug   = (string) $slug;
+		$legacy = sanitize_key( $slug );
+
+		return in_array( $slug, $selected, true ) || in_array( $legacy, $selected, true );
+	}
+
+	/**
+	 * Determine whether a submenu key is selected, supporting legacy sanitized values.
+	 *
+	 * @param string $parent Parent menu slug.
+	 * @param string $slug Submenu slug.
+	 * @param array<int, string> $selected Selected items.
+	 * @return bool
+	 */
+	public function submenu_item_is_selected( $parent, $slug, array $selected ) {
+		$key    = (string) $parent . '::' . (string) $slug;
+		$legacy = sanitize_key( $key );
+
+		return in_array( $key, $selected, true ) || in_array( $legacy, $selected, true );
 	}
 
 	/**

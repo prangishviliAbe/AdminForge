@@ -358,7 +358,7 @@ class Admin_Page {
 			$key = (string) $item['slug'];
 			?>
 			<label class="adminforge-item">
-				<input type="checkbox" name="adminforge[<?php echo esc_attr( $group ); ?>][<?php echo esc_attr( $field ); ?>][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected, true ), true ); ?> />
+								<input type="checkbox" name="adminforge[<?php echo esc_attr( $group ); ?>][<?php echo esc_attr( $field ); ?>][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $this->settings->menu_item_is_selected( $key, $selected ), true ); ?> />
 				<span class="adminforge-item-title"><?php echo esc_html( $item['title'] ); ?></span>
 				<span class="adminforge-item-meta"><?php echo esc_html( $item['slug'] ); ?></span>
 			</label>
@@ -385,7 +385,7 @@ class Admin_Page {
 				<?php foreach ( (array) $items as $item ) : ?>
 					<?php $key = (string) $parent . '::' . (string) $item['slug']; ?>
 					<label class="adminforge-item">
-						<input type="checkbox" name="adminforge[visibility][submenu_items][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected, true ), true ); ?> />
+						<input type="checkbox" name="adminforge[visibility][submenu_items][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $this->settings->submenu_item_is_selected( $parent, $item['slug'], $selected ), true ); ?> />
 						<span class="adminforge-item-title"><?php echo esc_html( $item['title'] ); ?></span>
 						<span class="adminforge-item-meta"><?php echo esc_html( $item['slug'] ); ?></span>
 					</label>

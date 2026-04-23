@@ -138,6 +138,7 @@ class Plugin {
 	protected function register_hooks() {
 		$this->loader->add_action( 'admin_menu', $this, 'register_admin_menu', 5 );
 		$this->loader->add_action( 'admin_menu', $this, 'capture_and_apply_menu_rules', 99 );
+		$this->loader->add_action( 'admin_menu', $this->access_manager, 'apply_menu_visibility', 999 );
 		$this->loader->add_action( 'wp_dashboard_setup', $this->dashboard_manager, 'register_dashboard_hooks', 999 );
 		$this->loader->add_action( 'admin_init', $this->access_manager, 'maybe_block_direct_access', 1 );
 		$this->loader->add_action( 'current_screen', $this->access_manager, 'maybe_register_screen_guards', 10, 1 );
