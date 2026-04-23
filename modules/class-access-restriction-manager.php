@@ -293,13 +293,14 @@ class Access_Restriction_Manager {
 		$sub_selected = array_map( 'sanitize_text_field', (array) $settings['visibility']['submenu_items'] );
 		$screen_id    = $screen ? (string) $screen->id : '';
 		$screen_base  = $screen ? (string) $screen->base : '';
+		$screen_post_type = $screen && ! empty( $screen->post_type ) ? (string) $screen->post_type : '';
 
 		foreach ( (array) $settings['menu_inventory']['top_level'] as $item ) {
 			if ( false !== strpos( strtolower( (string) $item['slug'] ), 'adminforge' ) ) {
 				continue;
 			}
 
-			if ( $this->matches_item( $item, $page, $screen_id, $screen_base ) ) {
+			if ( $this->matches_item( $item, $page, $screen_id, $screen_base, $screen_post_type ) ) {
 				$key = (string) $item['slug'];
 				$selected_match = $this->settings->menu_item_is_selected( $key, $top_selected );
 				return 'show_only' === $mode ? ! $selected_match : $selected_match;
@@ -316,7 +317,7 @@ class Access_Restriction_Manager {
 					continue;
 				}
 
-				if ( $this->matches_item( array_merge( $item, array( 'parent' => $parent ) ), $page, $screen_id, $screen_base ) ) {
+				if ( $this->matches_item( array_merge( $item, array( 'parent' => $parent ) ), $page, $screen_id, $screen_base, $screen_post_type ) ) {
 					$selected_match = $this->is_linked_submenu( (string) $parent, (string) $item['slug'] )
 						? $this->settings->menu_item_is_selected( (string) $parent, $top_selected )
 						: $this->settings->submenu_item_is_selected( (string) $parent, (string) $item['slug'], $sub_selected );
@@ -335,15 +336,25 @@ class Access_Restriction_Manager {
 	 * @param string               $page Page slug.
 	 * @param string               $screen_id Screen ID.
 	 * @param string               $screen_base Screen base.
+	 * @param string               $screen_post_type Screen post type.
 	 * @return bool
 	 */
-	protected function matches_item( array $item, $page, $screen_id, $screen_base ) {
+	protected function matches_item( array $item, $page, $screen_id, $screen_base, $screen_post_type = '' ) {
 		$slug = (string) $item['slug'];
 		$hook = (string) ( $item['hook_suffix'] ?? '' );
 		$base = sanitize_key( preg_replace( '/\.php.*$/', '', $slug ) );
+		$item_post_type = $this->extract_post_type_from_slug( $slug );
 
 		if ( '' !== $page && ( $slug === $page || false !== strpos( $slug, $page ) || false !== strpos( $page, $slug ) ) ) {
 			return true;
+		}
+
+		if ( '' !== $screen_post_type ) {
+			if ( '' !== $item_post_type ) {
+				return $item_post_type === $screen_post_type;
+			}
+
+			return false;
 		}
 
 		if ( '' !== $screen_id && ( $hook === $screen_id || false !== strpos( $screen_id, $base ) || false !== strpos( $screen_id, sanitize_key( $slug ) ) ) ) {
@@ -355,6 +366,26 @@ class Access_Restriction_Manager {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Extract a post type from a menu slug, if present.
+	 *
+	 * @param string $slug Slug.
+	 * @return string
+	 */
+	protected function extract_post_type_from_slug( $slug ) {
+		if ( false === strpos( $slug, 'post_type=' ) ) {
+			return '';
+		}
+
+		$query = wp_parse_url( $slug, PHP_URL_QUERY );
+		if ( ! $query ) {
+			return '';
+		}
+
+		parse_str( $query, $args );
+		return isset( $args['post_type'] ) ? sanitize_key( (string) $args['post_type'] ) : '';
 	}
 
 	/**
