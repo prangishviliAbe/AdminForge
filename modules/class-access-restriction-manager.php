@@ -163,7 +163,9 @@ class Access_Restriction_Manager {
 					continue;
 				}
 
-				$selected_match = $this->settings->submenu_item_is_selected( (string) $parent, $slug, $selected );
+				$selected_match = $this->is_linked_submenu( (string) $parent, $slug )
+					? $this->settings->menu_item_is_selected( (string) $parent, $selected )
+					: $this->settings->submenu_item_is_selected( (string) $parent, $slug, $selected );
 				$should_remove  = $show_only ? ! $selected_match : $selected_match;
 
 				if ( $should_remove ) {
@@ -187,7 +189,9 @@ class Access_Restriction_Manager {
 		}
 
 		$selected_match = ! empty( $item['parent'] )
-			? $this->settings->submenu_item_is_selected( (string) $item['parent'], $slug, $selected )
+			? ( $this->is_linked_submenu( (string) $item['parent'], $slug )
+				? $this->settings->menu_item_is_selected( (string) $item['parent'], $selected )
+				: $this->settings->submenu_item_is_selected( (string) $item['parent'], $slug, $selected ) )
 			: $this->settings->menu_item_is_selected( $slug, $selected );
 		$hide = $show_only ? ! $selected_match : $selected_match;
 
@@ -301,7 +305,9 @@ class Access_Restriction_Manager {
 				}
 
 				if ( $this->matches_item( array_merge( $item, array( 'parent' => $parent ) ), $page, $screen_id, $screen_base ) ) {
-					$selected_match = $this->settings->submenu_item_is_selected( (string) $parent, (string) $item['slug'], $sub_selected );
+					$selected_match = $this->is_linked_submenu( (string) $parent, (string) $item['slug'] )
+						? $this->settings->menu_item_is_selected( (string) $parent, $top_selected )
+						: $this->settings->submenu_item_is_selected( (string) $parent, (string) $item['slug'], $sub_selected );
 					return 'show_only' === $mode ? ! $selected_match : $selected_match;
 				}
 			}
@@ -337,6 +343,17 @@ class Access_Restriction_Manager {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Determine whether a submenu is the canonical screen for its parent post type menu.
+	 *
+	 * @param string $parent Parent slug.
+	 * @param string $slug Submenu slug.
+	 * @return bool
+	 */
+	protected function is_linked_submenu( $parent, $slug ) {
+		return (string) $parent === (string) $slug;
 	}
 
 	/**
