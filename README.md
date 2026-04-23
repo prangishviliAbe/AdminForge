@@ -1,5 +1,7 @@
 # AdminForge
 
+Created by Abe Prangishvili.
+
 AdminForge is a professional WordPress admin transformation plugin for simplifying, white-labeling, and controlling the backend experience by role, user, or globally.
 
 ![AdminForge Cover](assets/adminforge_cover.webp)
@@ -106,4 +108,3 @@ Planned premium-ready expansions include:
 ## License
 
 GPL-2.0-or-later
-
