@@ -134,19 +134,19 @@ class Settings {
 		$clean['visibility']['dashboard_widgets']      = $this->sanitize_text_array( $input['visibility']['dashboard_widgets'] ?? array() );
 		$clean['visibility']['restrict_direct_access'] = empty( $input['visibility']['restrict_direct_access'] ) ? 0 : 1;
 		$clean['visibility']['access_action']          = isset( $input['visibility']['access_action'] ) ? $this->sanitize_allowed( $input['visibility']['access_action'], array( 'redirect', 'deny' ), 'redirect' ) : 'redirect';
-		$clean['visibility']['redirect_target']        = isset( $input['visibility']['redirect_target'] ) ? sanitize_text_field( $input['visibility']['redirect_target'] ) : 'index.php';
+		$clean['visibility']['redirect_target']        = isset( $input['visibility']['redirect_target'] ) ? $this->sanitize_admin_redirect_target( $input['visibility']['redirect_target'] ) : 'index.php';
 		$clean['visibility']['deny_message']           = isset( $input['visibility']['deny_message'] ) ? sanitize_textarea_field( $input['visibility']['deny_message'] ) : $defaults['visibility']['deny_message'];
 
-		$clean['ui']['sidebar_bg']          = isset( $input['ui']['sidebar_bg'] ) ? sanitize_hex_color( $input['ui']['sidebar_bg'] ) : $defaults['ui']['sidebar_bg'];
-		$clean['ui']['sidebar_text']        = isset( $input['ui']['sidebar_text'] ) ? sanitize_hex_color( $input['ui']['sidebar_text'] ) : $defaults['ui']['sidebar_text'];
-		$clean['ui']['sidebar_accent']      = isset( $input['ui']['sidebar_accent'] ) ? sanitize_hex_color( $input['ui']['sidebar_accent'] ) : $defaults['ui']['sidebar_accent'];
-		$clean['ui']['content_bg']          = isset( $input['ui']['content_bg'] ) ? sanitize_hex_color( $input['ui']['content_bg'] ) : $defaults['ui']['content_bg'];
-		$clean['ui']['content_text']        = isset( $input['ui']['content_text'] ) ? sanitize_hex_color( $input['ui']['content_text'] ) : $defaults['ui']['content_text'];
-		$clean['ui']['font_family']         = isset( $input['ui']['font_family'] ) ? sanitize_text_field( $input['ui']['font_family'] ) : $defaults['ui']['font_family'];
-		$clean['ui']['menu_font_size']      = isset( $input['ui']['menu_font_size'] ) ? sanitize_text_field( $input['ui']['menu_font_size'] ) : $defaults['ui']['menu_font_size'];
-		$clean['ui']['menu_icon_size']      = isset( $input['ui']['menu_icon_size'] ) ? sanitize_text_field( $input['ui']['menu_icon_size'] ) : $defaults['ui']['menu_icon_size'];
-		$clean['ui']['custom_css']          = isset( $input['ui']['custom_css'] ) ? sanitize_textarea_field( $input['ui']['custom_css'] ) : '';
-		$clean['ui']['custom_js']           = isset( $input['ui']['custom_js'] ) ? sanitize_textarea_field( $input['ui']['custom_js'] ) : '';
+		$clean['ui']['sidebar_bg']          = isset( $input['ui']['sidebar_bg'] ) ? ( sanitize_hex_color( $input['ui']['sidebar_bg'] ) ?: $defaults['ui']['sidebar_bg'] ) : $defaults['ui']['sidebar_bg'];
+		$clean['ui']['sidebar_text']        = isset( $input['ui']['sidebar_text'] ) ? ( sanitize_hex_color( $input['ui']['sidebar_text'] ) ?: $defaults['ui']['sidebar_text'] ) : $defaults['ui']['sidebar_text'];
+		$clean['ui']['sidebar_accent']      = isset( $input['ui']['sidebar_accent'] ) ? ( sanitize_hex_color( $input['ui']['sidebar_accent'] ) ?: $defaults['ui']['sidebar_accent'] ) : $defaults['ui']['sidebar_accent'];
+		$clean['ui']['content_bg']          = isset( $input['ui']['content_bg'] ) ? ( sanitize_hex_color( $input['ui']['content_bg'] ) ?: $defaults['ui']['content_bg'] ) : $defaults['ui']['content_bg'];
+		$clean['ui']['content_text']        = isset( $input['ui']['content_text'] ) ? ( sanitize_hex_color( $input['ui']['content_text'] ) ?: $defaults['ui']['content_text'] ) : $defaults['ui']['content_text'];
+		$clean['ui']['font_family']         = isset( $input['ui']['font_family'] ) ? $this->sanitize_css_font_family( $input['ui']['font_family'], $defaults['ui']['font_family'] ) : $defaults['ui']['font_family'];
+		$clean['ui']['menu_font_size']      = isset( $input['ui']['menu_font_size'] ) ? $this->sanitize_css_size( $input['ui']['menu_font_size'], $defaults['ui']['menu_font_size'] ) : $defaults['ui']['menu_font_size'];
+		$clean['ui']['menu_icon_size']      = isset( $input['ui']['menu_icon_size'] ) ? $this->sanitize_css_size( $input['ui']['menu_icon_size'], $defaults['ui']['menu_icon_size'] ) : $defaults['ui']['menu_icon_size'];
+		$clean['ui']['custom_css']          = $this->current_user_can_use_custom_code() && isset( $input['ui']['custom_css'] ) ? (string) $input['ui']['custom_css'] : (string) ( $existing['ui']['custom_css'] ?? '' );
+		$clean['ui']['custom_js']           = $this->current_user_can_use_custom_code() && isset( $input['ui']['custom_js'] ) ? (string) $input['ui']['custom_js'] : (string) ( $existing['ui']['custom_js'] ?? '' );
 		$clean['ui']['hide_wp_logo']        = empty( $input['ui']['hide_wp_logo'] ) ? 0 : 1;
 		$clean['ui']['hide_screen_options']  = empty( $input['ui']['hide_screen_options'] ) ? 0 : 1;
 
@@ -247,6 +247,95 @@ class Settings {
 	protected function sanitize_allowed( $value, array $allowed, $default ) {
 		$value = sanitize_key( $value );
 		return in_array( $value, $allowed, true ) ? $value : $default;
+	}
+
+	/**
+	 * Sanitize a redirect target that will be resolved relative to wp-admin.
+	 *
+	 * @param string $value Raw target.
+	 * @return string
+	 */
+	protected function sanitize_admin_redirect_target( $value ) {
+		$value = trim( sanitize_text_field( (string) $value ) );
+		$value = ltrim( $value, "/\\ \t\n\r\0\x0B" );
+
+		if ( '' === $value || preg_match( '#^[a-z][a-z0-9+.-]*:#i', $value ) ) {
+			return 'index.php';
+		}
+
+		$parts = wp_parse_url( $value );
+		if ( false === $parts || ! empty( $parts['host'] ) || empty( $parts['path'] ) ) {
+			return 'index.php';
+		}
+
+		$path          = basename( (string) $parts['path'] );
+		$allowed_paths = array(
+			'admin.php',
+			'edit-comments.php',
+			'edit.php',
+			'index.php',
+			'plugins.php',
+			'post-new.php',
+			'profile.php',
+			'themes.php',
+			'tools.php',
+			'upload.php',
+			'users.php',
+		);
+
+		if ( ! in_array( $path, $allowed_paths, true ) ) {
+			return 'index.php';
+		}
+
+		$query = array();
+		if ( ! empty( $parts['query'] ) ) {
+			parse_str( $parts['query'], $query );
+			$query = array_filter( $query, 'is_scalar' );
+			$query = array_intersect_key(
+				array_map( 'sanitize_text_field', $query ),
+				array(
+					'page'      => true,
+					'post_type' => true,
+				)
+			);
+		}
+
+		return $query ? add_query_arg( $query, $path ) : $path;
+	}
+
+	/**
+	 * Sanitize a small CSS size token.
+	 *
+	 * @param string $value Raw size.
+	 * @param string $default Default size.
+	 * @return string
+	 */
+	protected function sanitize_css_size( $value, $default ) {
+		$value = trim( sanitize_text_field( (string) $value ) );
+
+		return preg_match( '/^\d{1,3}(\.\d{1,2})?(px|rem|em|%)$/', $value ) ? $value : $default;
+	}
+
+	/**
+	 * Sanitize a font-family declaration used inside a CSS custom property.
+	 *
+	 * @param string $value Raw font family.
+	 * @param string $default Default font family.
+	 * @return string
+	 */
+	protected function sanitize_css_font_family( $value, $default ) {
+		$value = trim( sanitize_text_field( (string) $value ) );
+
+		return preg_match( '/^[a-zA-Z0-9\s,"\'._-]+$/', $value ) ? $value : $default;
+	}
+
+	/**
+	 * Determine whether current user may store raw admin CSS/JS.
+	 *
+	 * @return bool
+	 */
+	protected function current_user_can_use_custom_code() {
+		return current_user_can( 'unfiltered_html' );
 	}
 
 	/**

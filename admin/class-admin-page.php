@@ -87,6 +87,10 @@ class Admin_Page {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'adminforge' ) ), 403 );
 		}
 
+		if ( empty( $this->settings->get_settings()['advanced']['enable_ajax'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'AJAX helpers are disabled.', 'adminforge' ) ), 403 );
+		}
+
 		check_ajax_referer( 'adminforge_ajax', 'nonce' );
 
 		$inventory = $this->scanner->scan();
@@ -107,6 +111,10 @@ class Admin_Page {
 	public function ajax_search_users() {
 		if ( ! current_user_can( self::CAPABILITY ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'adminforge' ) ), 403 );
+		}
+
+		if ( empty( $this->settings->get_settings()['advanced']['enable_ajax'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'AJAX helpers are disabled.', 'adminforge' ) ), 403 );
 		}
 
 		check_ajax_referer( 'adminforge_ajax', 'nonce' );

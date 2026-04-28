@@ -73,14 +73,29 @@ jQuery(function ($) {
 				return;
 			}
 
-			rows.forEach(function (row) {
-				html += '<div class="adminforge-user-result">';
-				html += '<span>' + $('<div/>').text(row.label).html() + '</span>';
-				html += '<button type="button" class="button button-small adminforge-user-add" data-user-id="' + row.id + '" data-user-label="' + $('<div/>').text(row.label).html() + '">Add</button>';
-				html += '</div>';
-			});
+			$results.empty();
 
-			$results.html(html);
+			rows.forEach(function (row) {
+				var userId = parseInt(row.id, 10);
+				var label = String(row.label || '');
+				var $row = $('<div/>', { class: 'adminforge-user-result' });
+				var $button = $('<button/>', {
+					type: 'button',
+					class: 'button button-small adminforge-user-add',
+					text: 'Add'
+				});
+
+				if (!userId) {
+					return;
+				}
+
+				$button.attr('data-user-id', userId);
+				$button.data('user-label', label);
+
+				$row.append($('<span/>').text(label));
+				$row.append($button);
+				$results.append($row);
+			});
 		}).fail(function () {
 			$results.html('<p>Could not load users.</p>');
 		});
@@ -90,17 +105,31 @@ jQuery(function ($) {
 
 	function addSelectedUser(user) {
 		var $selected = $('#adminforge-user-selected');
-		if ($selected.find('[data-user-id="' + user.id + '"]').length) {
+		var userId = parseInt(user.id, 10);
+		var label = String(user.label || '');
+
+		if (!userId || $selected.find('[data-user-id="' + userId + '"]').length) {
 			return;
 		}
 
-		var html = '';
-		html += '<span class="adminforge-chip" data-user-id="' + user.id + '">';
-		html += $('<div/>').text(user.label).html();
-		html += '<button type="button" class="adminforge-chip-remove" aria-label="Remove user">&times;</button>';
-		html += '<input type="hidden" name="adminforge[general][target_users][]" value="' + user.id + '" />';
-		html += '</span>';
-		$selected.append(html);
+		var $chip = $('<span/>', {
+			class: 'adminforge-chip'
+		}).attr('data-user-id', userId);
+
+		$chip.append(document.createTextNode(label));
+		$chip.append($('<button/>', {
+			type: 'button',
+			class: 'adminforge-chip-remove',
+			'aria-label': 'Remove user',
+			html: '&times;'
+		}));
+		$chip.append($('<input/>', {
+			type: 'hidden',
+			name: 'adminforge[general][target_users][]',
+			value: userId
+		}));
+
+		$selected.append($chip);
 	}
 
 	$('#adminforge-user-search').on('input', function () {

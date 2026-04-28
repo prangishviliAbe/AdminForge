@@ -43,7 +43,7 @@ It is designed for:
 - Plugin Slug: adminforge
 - Text Domain: adminforge
 - Author: Abe Prangishvili
-- Version: 1.0.5
+- Version: 1.0.6
 
 ## Folder Structure
 
@@ -104,6 +104,17 @@ Planned premium-ready expansions include:
 - analytics
 - custom dashboard widgets
 - onboarding panels
+
+## Changelog
+
+### 1.0.6 - 2026-04-28
+
+- Fixed DOM-safe rendering for AJAX user selector results to prevent admin-page XSS from user display names.
+- Restricted menu and dashboard inventory writes to users with AdminForge management capability.
+- Made the AJAX helper setting enforceable at hook and endpoint level.
+- Hardened redirect target validation for direct-access restriction responses.
+- Tightened CSS value validation and limited raw custom CSS/JS saving to users with `unfiltered_html`.
+- Escaped login logo URLs at output time.
 
 ## License
 

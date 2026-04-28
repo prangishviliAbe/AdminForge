@@ -151,8 +151,11 @@ class Plugin {
 		$this->loader->add_action( 'admin_bar_menu', $this->branding_manager, 'tweak_admin_bar', 999, 1 );
 		$this->loader->add_filter( 'admin_footer_text', $this->branding_manager, 'filter_admin_footer_text' );
 		$this->loader->add_filter( 'update_footer', $this->branding_manager, 'filter_update_footer' );
-		$this->loader->add_action( 'wp_ajax_adminforge_rescan_menus', $this->admin_page, 'ajax_rescan_menus' );
-		$this->loader->add_action( 'wp_ajax_adminforge_search_users', $this->admin_page, 'ajax_search_users' );
+		if ( ! empty( $this->settings->get_settings()['advanced']['enable_ajax'] ) ) {
+			$this->loader->add_action( 'wp_ajax_adminforge_rescan_menus', $this->admin_page, 'ajax_rescan_menus' );
+			$this->loader->add_action( 'wp_ajax_adminforge_search_users', $this->admin_page, 'ajax_search_users' );
+		}
+
 		$this->loader->add_action( 'admin_post_adminforge_save_settings', $this->admin_page, 'handle_save_settings' );
 	}
 

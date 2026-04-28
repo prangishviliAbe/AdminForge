@@ -42,13 +42,13 @@ class Branding_Manager {
 		}
 
 		$branding = $this->settings->get_settings()['branding'];
-		$logo     = ! empty( $branding['login_logo'] ) ? esc_url_raw( $branding['login_logo'] ) : '';
+		$logo     = ! empty( $branding['login_logo'] ) ? esc_url( $branding['login_logo'] ) : '';
 
 		$css  = 'body.login { background: #0f172a; }';
 		$css .= 'body.login #login h1 a { background-size: contain; width: 100%; height: 80px; }';
 
 		if ( $logo ) {
-			$css .= sprintf( 'body.login #login h1 a{background-image:url("%s");}', esc_url_raw( $logo ) );
+			$css .= sprintf( 'body.login #login h1 a{background-image:url("%s");}', $logo );
 		}
 
 		echo '<style id="adminforge-login-css">' . $css . '</style>';

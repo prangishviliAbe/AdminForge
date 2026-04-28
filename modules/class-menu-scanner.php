@@ -41,6 +41,10 @@ class Menu_Scanner {
 	 * @param array<string, mixed> $inventory Inventory.
 	 */
 	public function store_inventory( array $inventory ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$settings                      = $this->settings->get_settings();
 		$settings['menu_inventory']    = $this->settings->sanitize_menu_inventory( $inventory );
 		$this->settings->save_settings( $settings );
@@ -50,6 +54,10 @@ class Menu_Scanner {
 	 * Refresh inventory if needed.
 	 */
 	public function maybe_refresh_inventory() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$settings = $this->settings->get_settings();
 		if ( ! empty( $settings['advanced']['cache_inventory'] ) && ! empty( $settings['menu_inventory']['top_level'] ) ) {
 			return;
@@ -166,4 +174,3 @@ class Menu_Scanner {
 		return sanitize_key( $slug );
 	}
 }
-

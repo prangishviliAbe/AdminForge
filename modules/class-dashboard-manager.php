@@ -45,6 +45,10 @@ class Dashboard_Manager {
 	 * Refresh dashboard widget inventory.
 	 */
 	public function maybe_refresh_dashboard_inventory() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$settings = $this->settings->get_settings();
 		if ( ! empty( $settings['advanced']['cache_inventory'] ) && ! empty( $settings['dashboard_inventory']['widgets'] ) ) {
 			return;
@@ -114,6 +118,10 @@ class Dashboard_Manager {
 	 * @param array<string, mixed> $inventory Inventory.
 	 */
 	public function store_inventory( array $inventory ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$settings                        = $this->settings->get_settings();
 		$settings['dashboard_inventory'] = $this->settings->sanitize_dashboard_inventory( $inventory );
 		$this->settings->save_settings( $settings );
